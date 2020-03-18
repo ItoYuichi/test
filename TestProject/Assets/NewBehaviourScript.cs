@@ -23,9 +23,10 @@ public class NewBehaviourScript : MonoBehaviour
         {
             this.rb.transform.Rotate(0, 2.0f, 0);
         }
-        if (Input.GetKey(KeyCode.Space))
+        if (Input.GetKey(KeyCode.Space) && this.rb.velocity.magnitude < 5.0f)
         {
-            this.rb.AddForce(transform.forward * 15.0f, ForceMode.Acceleration);
+            this.rb.AddForce(this.rb.transform.forward * 15.0f, ForceMode.Acceleration);
         }
+        Debug.Log(this.rb.velocity.magnitude);
     }
 }
