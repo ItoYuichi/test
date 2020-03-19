@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class NewBehaviourScript : MonoBehaviour
 {
@@ -27,6 +28,9 @@ public class NewBehaviourScript : MonoBehaviour
         {
             this.rb.AddForce(this.rb.transform.forward * 15.0f, ForceMode.Acceleration);
         }
-        Debug.Log(this.rb.velocity.magnitude);
+        if (this.rb.position.y < -1.0f)
+        {
+            SceneManager.LoadScene("GameOver_fall");
+        }
     }
 }
