@@ -2,15 +2,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class NewBehaviourScript : MonoBehaviour
 {
     private Rigidbody rb = null;
+    private static int maxHP = 100;
+    private int currentHP;
+    public Slider slider;
 
     // Start is called before the first frame update
     void Start()
     {
-        this.rb = this.GetComponent<Rigidbody>();   
+        this.rb = this.GetComponent<Rigidbody>();
+        this.currentHP = maxHP;
+        this.slider.value = (float)this.currentHP / (float)maxHP;
     }
 
     // Update is called once per frame
@@ -29,6 +35,17 @@ public class NewBehaviourScript : MonoBehaviour
             this.rb.AddForce(this.rb.transform.forward * 15.0f, ForceMode.Acceleration);
         }
         if (this.rb.position.y < -1.0f)
+        {
+            SceneManager.LoadScene("GameOver_fall");
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        // 衝突した場合体力を減らす
+        this.currentHP = this.currentHP - 2;
+        this.slider.value = (float)this.currentHP / (float)maxHP;
+        if (this.currentHP < 0)
         {
             SceneManager.LoadScene("GameOver_fall");
         }
