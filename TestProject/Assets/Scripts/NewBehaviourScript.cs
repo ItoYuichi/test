@@ -50,4 +50,10 @@ public class NewBehaviourScript : MonoBehaviour
             SceneManager.LoadScene("GameOver_fall");
         }
     }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        // 水流に当たったらクリア
+        Debug.Log("クリア");
+    }
 }
