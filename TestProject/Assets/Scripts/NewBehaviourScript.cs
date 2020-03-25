@@ -54,6 +54,6 @@ public class NewBehaviourScript : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         // 水流に当たったらクリア
-        Debug.Log("クリア");
+        SceneManager.LoadScene("GameOver_clear");
     }
 }
