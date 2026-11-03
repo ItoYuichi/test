@@ -1,26 +1,31 @@
 fileFormatVersion: 2
 guid: 7fc292a64e105bc4f99eb28acc512339
-timeCreated: 1516886789
-licenseType: Store
 PluginImporter:
   externalObjects: {}
-  serializedVersion: 2
+  serializedVersion: 3
   iconMap: {}
   executionOrder: {}
+  defineConstraints: []
   isPreloaded: 0
   isOverridable: 0
+  isExplicitlyReferenced: 0
+  validateReferences: 1
   platformData:
-  - first:
-      Any: 
-    second:
+    Any:
       enabled: 1
       settings: {}
-  - first:
-      Editor: Editor
-    second:
+    Editor:
       enabled: 0
       settings:
         DefaultValueInitialized: true
+    Win:
+      enabled: 1
+      settings:
+        CPU: None
+    Win64:
+      enabled: 1
+      settings:
+        CPU: x86_64
   userData: 
   assetBundleName: 
   assetBundleVariant: 
