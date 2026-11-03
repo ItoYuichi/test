@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using NVIDIA.Flex;
 
 public class NewBehaviourScript : MonoBehaviour
 {
+    // 接触面の法線のy成分がこの値以上なら地面とみなす
+    private const float GroundNormalThreshold = 0.7f;
+
     private Rigidbody rb = null;
     private static int maxHP = 100;
     private int currentHP;
@@ -40,12 +44,32 @@ public class NewBehaviourScript : MonoBehaviour
         }
     }
 
+    private static bool IsGroundContact(Collision collision)
+    {
+        if (collision.contacts.Length == 0)
+        {
+            return false;
+        }
+        foreach (ContactPoint contact in collision.contacts)
+        {
+            if (contact.normal.y < GroundNormalThreshold)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
+        if (IsGroundContact(collision))
+        {
+            return;
+        }
         // 衝突した場合体力を減らす
         this.currentHP = this.currentHP - 2;
         this.slider.value = (float)this.currentHP / (float)maxHP;
-        if (this.currentHP < 0)
+        if (this.currentHP <= 0)
         {
             SceneManager.LoadScene("GameOver_fall");
         }
@@ -53,6 +77,10 @@ public class NewBehaviourScript : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (other.GetComponentInParent<FlexSourceActor>() == null)
+        {
+            return;
+        }
         // 水流に当たったらクリア
         SceneManager.LoadScene("GameOver_clear");
     }
