@@ -78,7 +78,9 @@ CGPROGRAM
 // reads from normal: no
 // 1 texcoords actually used
 //   float2 _MainTex
+#ifndef UNITY_PASS_FORWARDBASE
 #define UNITY_PASS_FORWARDBASE
+#endif
 #include "UnityCG.cginc"
 #include "Lighting.cginc"
 #include "UnityPBSLighting.cginc"
@@ -442,7 +444,9 @@ CGPROGRAM
 // reads from normal: no
 // 1 texcoords actually used
 //   float2 _MainTex
+#ifndef UNITY_PASS_FORWARDADD
 #define UNITY_PASS_FORWARDADD
+#endif
 #include "UnityCG.cginc"
 #include "Lighting.cginc"
 #include "UnityPBSLighting.cginc"
@@ -706,7 +710,9 @@ CGPROGRAM
 // reads from normal: YES
 // 1 texcoords actually used
 //   float2 _MainTex
+#ifndef UNITY_PASS_DEFERRED
 #define UNITY_PASS_DEFERRED
+#endif
 #include "UnityCG.cginc"
 #include "Lighting.cginc"
 #include "UnityPBSLighting.cginc"
@@ -1041,7 +1047,9 @@ CGPROGRAM
 // reads from normal: no
 // 1 texcoords actually used
 //   float2 _MainTex
+#ifndef UNITY_PASS_META
 #define UNITY_PASS_META
+#endif
 #include "UnityCG.cginc"
 #include "Lighting.cginc"
 #include "UnityPBSLighting.cginc"
