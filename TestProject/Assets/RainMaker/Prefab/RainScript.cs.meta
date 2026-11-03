@@ -10,9 +10,8 @@ labels:
 - Wind
 - Seamless
 - Fade
-timeCreated: 1454365282
-licenseType: Store
 MonoImporter:
+  externalObjects: {}
   serializedVersion: 2
   defaultReferences:
   - Camera: {instanceID: 0}
