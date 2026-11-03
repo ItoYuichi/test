@@ -7,6 +7,7 @@
 //   reading the main directional light, ambient (spherical harmonics) and up to 4 vertex point lights.
 // - Adds _MinLight so the rain stays visible in dark scenes, because both color and alpha scale with light.
 // - Replaces fixed-function AlphaTest with clip() and updates the fallback shader name.
+// - Uses Cull Off so particle quads are drawn regardless of their facing, like the built-in particle shaders.
 //
 
 Shader "Custom/RainShader"
@@ -31,7 +32,7 @@ Shader "Custom/RainShader"
 		{
 			Tags { "LightMode"="ForwardBase" }
 			ZWrite Off
-			Cull Back
+			Cull Off
 			ColorMask RGB
 			Blend SrcAlpha OneMinusSrcAlpha
 
