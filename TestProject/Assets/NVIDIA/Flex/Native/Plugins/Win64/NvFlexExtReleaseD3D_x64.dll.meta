@@ -45,11 +45,11 @@ PluginImporter:
     Win:
       enabled: 1
       settings:
-        CPU: AnyCPU
+        CPU: None
     Win64:
       enabled: 1
       settings:
-        CPU: AnyCPU
+        CPU: x86_64
   userData: 
   assetBundleName: 
   assetBundleVariant: 
