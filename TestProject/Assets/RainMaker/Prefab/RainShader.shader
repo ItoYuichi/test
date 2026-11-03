@@ -2,6 +2,12 @@
 // Rain Maker (c) 2015 Digital Ruby, LLC
 // http://www.digitalruby.com
 //
+// Modified for Unity 6:
+// - Uses a ForwardBase pass instead of the legacy vertex-lit pass ("LightMode"="Vertex"),
+//   reading the main directional light, ambient (spherical harmonics) and up to 4 vertex point lights.
+// - Adds _MinLight so the rain stays visible in dark scenes, because both color and alpha scale with light.
+// - Replaces fixed-function AlphaTest with clip() and updates the fallback shader name.
+//
 
 Shader "Custom/RainShader"
 {
@@ -13,28 +19,28 @@ Shader "Custom/RainShader"
 		_DirectionalLightMultiplier ("Directional Light Multiplier", Range (0, 10)) = 1
 		_InvFade ("Soft Particles Factor", Range(0.01, 100.0)) = 1.0
 		_AmbientLightMultiplier ("Ambient light multiplier", Range(0, 1)) = 0.25
+		_MinLight ("Minimum light (keeps rain visible in dark scenes)", Range(0, 1)) = 0.3
     }
 
     SubShader
 	{
-        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" "LightMode"="Vertex" }
+        Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
 		LOD 100
 
         Pass
 		{
+			Tags { "LightMode"="ForwardBase" }
 			ZWrite Off
 			Cull Back
-            Lighting On     
-			AlphaTest Greater 0.01
 			ColorMask RGB
 			Blend SrcAlpha OneMinusSrcAlpha
 
             CGPROGRAM
 
             #pragma multi_compile_particles
+            #pragma multi_compile_fwdbase
             #pragma vertex vert
             #pragma fragment frag
-			#pragma fragmentoption ARB_precision_hint_fastest
 
             #include "UnityCG.cginc"
 			#include "Lighting.cginc"
@@ -43,6 +49,7 @@ Shader "Custom/RainShader"
 			float _DirectionalLightMultiplier;
 			float _PointSpotLightMultiplier;
 			float _AmbientLightMultiplier;
+			float _MinLight;
 
 			#if defined(SOFTPARTICLES_ON)
 			float _InvFade;
@@ -65,52 +72,39 @@ Shader "Custom/RainShader"
                 #endif
             };
 
-			float3 ApplyLight(int index, float3 lightColor, float3 viewPos)
-			{
-				fixed3 currentLightColor = unity_LightColor[index].rgb;
-				float4 lightPos = unity_LightPosition[index];
-
-				if (lightPos.w == 0)
-				{
-					// directional light, the lightPos is actually the direction of the light
-					// for some weird reason, Unity seems to change the directional light position based on the vertex,
-					// this hack seems to compensate for that
-					lightPos = mul(lightPos, UNITY_MATRIX_V);
-
-					// depending on how the directional light is pointing, reduce the intensity (which goes to 0 as it goes below the horizon)
-					fixed multiplier = clamp((lightPos.y * 2) + 1, 0, 1);
-					return lightColor + (currentLightColor * multiplier * _DirectionalLightMultiplier);
-				}
-				else
-				{
-					float3 toLight = lightPos.xyz - viewPos;
-	                fixed lengthSq = dot(toLight, toLight);
-	                fixed atten = 1.0 / (1.0 + (lengthSq * unity_LightAtten[index].z));
-					return lightColor + (currentLightColor * atten * _PointSpotLightMultiplier);
-				}
-			}
- 
-            fixed4 LightForVertex(float4 vertex)
+            float3 LightForVertex(float4 vertex)
             {
-                float3 viewPos = UnityObjectToViewPos(vertex).xyz;
-                fixed3 lightColor = UNITY_LIGHTMODEL_AMBIENT.rgb * _AmbientLightMultiplier;
+                float3 worldPos = mul(unity_ObjectToWorld, vertex).xyz;
 
-				lightColor = ApplyLight(0, lightColor, viewPos);
-				lightColor = ApplyLight(1, lightColor, viewPos);
-				lightColor = ApplyLight(2, lightColor, viewPos);
-				lightColor = ApplyLight(3, lightColor, viewPos);
+				// ambient light (environment lighting, including baked skybox ambient)
+                float3 lightColor = ShadeSH9(float4(0, 1, 0, 1)) * _AmbientLightMultiplier;
 
-                return fixed4(lightColor, 1);
+				// main directional light, reduced as it goes below the horizon (same behavior as the original shader)
+				float multiplier = saturate((_WorldSpaceLightPos0.y * 2) + 1);
+				lightColor += _LightColor0.rgb * multiplier * _DirectionalLightMultiplier;
+
+				#if defined(VERTEXLIGHT_ON)
+				// up to 4 point/spot lights, attenuation only (rain drops have no normal)
+				for (int index = 0; index < 4; index++)
+				{
+					float3 toLight = float3(unity_4LightPosX0[index], unity_4LightPosY0[index], unity_4LightPosZ0[index]) - worldPos;
+					float lengthSq = dot(toLight, toLight);
+					float atten = 1.0 / (1.0 + (lengthSq * unity_4LightAtten0[index]));
+					lightColor += unity_LightColor[index].rgb * atten * _PointSpotLightMultiplier;
+				}
+				#endif
+
+                return max(lightColor, _MinLight.xxx);
             }
- 
+
             float4 _MainTex_ST;
- 
+
             v2f vert(appdata_t v)
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv_MainTex = TRANSFORM_TEX(v.texcoord, _MainTex);
-                o.color = LightForVertex(v.vertex) * v.color * _TintColor;
+                o.color = fixed4(LightForVertex(v.vertex), 1) * v.color * _TintColor;
 
 				// o.color = v.color * _TintColor; // temp if you want to disable lighting
 
@@ -122,28 +116,30 @@ Shader "Custom/RainShader"
                 COMPUTE_EYEDEPTH(o.projPos.z);
                 #endif
 
-                return o; 
+                return o;
             }
-			
+
 			#if defined(SOFTPARTICLES_ON)
 			sampler2D _CameraDepthTexture;
 			#endif
-			
+
 			sampler2D _MainTex;
-  
-            fixed4 frag (v2f i) : COLOR
+
+            fixed4 frag (v2f i) : SV_Target
 			{
 				#if defined(SOFTPARTICLES_ON)
-				float sceneZ = LinearEyeDepth(UNITY_SAMPLE_DEPTH(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.projPos))));
+				float sceneZ = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture, UNITY_PROJ_COORD(i.projPos)));
 				float partZ = i.projPos.z;
 				i.color.a *= saturate(_InvFade * (sceneZ - partZ));
 				#endif
 
-				return tex2D(_MainTex, i.uv_MainTex) * i.color;
+				fixed4 col = tex2D(_MainTex, i.uv_MainTex) * i.color;
+				clip(col.a - 0.01);
+				return col;
             }
             ENDCG
         }
     }
- 
-    Fallback "Particles/Alpha Blended"
+
+    Fallback "Legacy Shaders/Particles/Alpha Blended"
 }
