@@ -16,6 +16,9 @@ namespace DigitalRuby.RainMaker
         public ParticleSystem RainExplosion;
         public ParticleSystem RainParticleSystem;
 
+        [Tooltip("Minimum (x) and maximum (y) size of the splash particles emitted when a rain drop hits something")]
+        public Vector2 SplashSizeRange = new Vector2(0.005f, 0.01f);
+
         private void Start()
         {
 
@@ -35,7 +38,7 @@ namespace DigitalRuby.RainMaker
                 float zVelocity = UnityEngine.Random.Range(-2.0f, 2.0f);
                 float xVelocity = UnityEngine.Random.Range(-2.0f, 2.0f);
                 const float lifetime = 0.75f;// UnityEngine.Random.Range(0.25f, 0.75f);
-                float size = UnityEngine.Random.Range(0.05f, 0.1f);
+                float size = UnityEngine.Random.Range(SplashSizeRange.x, SplashSizeRange.y);
                 ParticleSystem.EmitParams param = new ParticleSystem.EmitParams();
                 param.position = pos;
                 param.velocity = new Vector3(xVelocity, yVelocity, zVelocity);
